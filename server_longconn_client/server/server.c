@@ -82,11 +82,6 @@ int main(){
             // just send what we recevie
             send(connfd, buffer, ret, 0);
 
-            if(ret == BUFFER_SIZE){
-                // there is still data that has not been read
-                continue;
-            }
-            // all data has been read
             continue;
         }
         // Close the connection
