@@ -11,7 +11,7 @@
 #define BUFFER_SIZE     1024
 #define WAIT_MAX        3
 
-int main() {
+int main(){
     int serverfd, connfd;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
@@ -31,8 +31,8 @@ int main() {
     address.sin_port = htons(PORT);
 
     // Bind the socket to the address and port
-    ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
-    if (ret < 0) {
+    ret = bind(serverfd, (struct sockaddr*)&address, sizeof(address));
+    if(ret < 0){
         perror("Bind failed");
         close(serverfd);
         exit(EXIT_FAILURE);
@@ -40,7 +40,7 @@ int main() {
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
-    if (ret < 0) {
+    if(ret < 0){
         perror("Listen failed");
         close(serverfd);
         exit(EXIT_FAILURE);
@@ -48,8 +48,8 @@ int main() {
     printf("Server listening on port %d\n", PORT);
 
     // Accept a client connection
-    connfd = accept(serverfd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-    if (connfd < 0) {
+    connfd = accept(serverfd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+    if(connfd < 0){
         perror("Accept failed");
         close(serverfd);
         exit(EXIT_FAILURE);
