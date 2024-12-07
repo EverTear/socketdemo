@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <errno.h>
-#include <signal.h>
 
 #define PORT            8234
 #define BUFFER_SIZE     1024
