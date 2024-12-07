@@ -5,17 +5,27 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <signal.h>
 
 #define PORT            8234
 #define BUFFER_SIZE     1024
 #define WAIT_MAX        3
 
+static int serverfd;
+
+void signal_handler(int signo){
+    printf("Signal captured, closing socket...\n");
+    close(serverfd);
+}
+
 int main(){
-    int serverfd, connfd;
+    int connfd;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
     int ret;
+
+    signal(SIGINT, signal_handler);
 
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -84,7 +94,5 @@ int main(){
         printf("connection %d closed\n", connfd);
     }
 
-    printf("closing serverfd\n");
-    close(serverfd);
     return 0;
 }
