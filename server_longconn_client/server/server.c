@@ -9,29 +9,32 @@
 
 #define PORT            8234
 #define BUFFER_SIZE     1024
-#define WAIT_MAX        3
+#define WAIT_MAX        10
 
-static int serverfd;
+static int serverfd = -1;
 
 void signal_handler(int signo){
     printf("Signal captured, closing socket...\n");
-    close(serverfd);
+    if(serverfd >= 0){
+        close(serverfd);
+    }
 }
 
 int main(){
-    int connfd;
-    struct sockaddr_in address;
+    int connfd = -1;
+    struct sockaddr_in address = {0};
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
-    int ret;
-
+    int ret = 0;
+    
+    // Register the signal process function
     signal(SIGINT, signal_handler);
 
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
-    if(serverfd == 0){
+    if(serverfd < 0){
         perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        goto fail;
     }
 
     // Configure address and port
@@ -43,16 +46,14 @@ int main(){
     ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
     if(ret < 0){
         perror("Bind failed");
-        close(serverfd);
-        exit(EXIT_FAILURE);
+        goto fail;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
         perror("Listen failed");
-        close(serverfd);
-        exit(EXIT_FAILURE);
+        goto fail;
     }
     printf("Server listening on port %d\n", PORT);
 
@@ -61,10 +62,9 @@ int main(){
         connfd = accept(serverfd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (connfd < 0){
             perror("Accept failed");
-            close(serverfd);
-            exit(EXIT_FAILURE);
+            goto fail;
         }
-        printf("Client connected\n");
+        printf("Client %d connected\n", connfd);
 
         // Handle client request
         while(1){
@@ -90,4 +90,13 @@ int main(){
     }
 
     return 0;
+
+fail:
+    if(connfd >= 0){
+        close(connfd);
+    }
+    if(serverfd >= 0){
+        close(serverfd);
+    }
+    return -1;
 }

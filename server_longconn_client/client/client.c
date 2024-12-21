@@ -11,18 +11,18 @@
 #define BUFFER_SIZE     1024      // Buffer size for communication
 
 int main() {
-    int connfd = 0;
-    struct sockaddr_in server_address;
+    int connfd = -1;
+    struct sockaddr_in server_address = {0};
     unsigned char buffer[BUFFER_SIZE] = {0};
     unsigned char message[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    int ret;
-    unsigned int i;
+    int ret = 0;
+    unsigned int i = 0;
 
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if(connfd < 0){
         perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        goto fail;
     }
 
     // Configure server address
@@ -32,23 +32,25 @@ int main() {
     // Convert IPv4 address from text to binary form
     ret = inet_pton(AF_INET, SERVER_IP, &server_address.sin_addr);
     if(ret <= 0){
-        perror("Invalid address or address not supported");
-        close(connfd);
-        exit(EXIT_FAILURE);
+        printf("Invalid address / Address not supported\n");
+        goto fail;
     }
 
     // Connect to the server
     ret = connect(connfd, (struct sockaddr *)&server_address, sizeof(server_address));
     if(ret < 0){
         perror("Connection to server failed");
-        close(connfd);
-        exit(EXIT_FAILURE);
+        goto fail;
     }
     printf("Connected to the server\n");
 
     for(i = 0; i < 2; ++i){
         // Send data to the server
-        send(connfd, message, sizeof(message), 0);
+        ret = send(connfd, message, sizeof(message), 0);
+        if(ret != sizeof(message)){
+            perror("send error\n");
+            goto fail;
+        }
         printf("Message sent to server\n");
 
         // Receive response from the server
@@ -82,4 +84,10 @@ int main() {
     printf("Connection closed\n");
 
     return 0;
+
+fail:
+    if(connfd >= 0){
+        close(connfd);
+    }
+    return -1;
 }
