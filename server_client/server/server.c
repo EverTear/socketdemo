@@ -50,7 +50,7 @@ int main(){
         perror("Accept failed");
         goto fail;
     }
-    printf("Client connected\n");
+    printf("Client %d connected\n", connfd);
 
     // Handle client request
     while(1){
