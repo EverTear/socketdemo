@@ -5,23 +5,24 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <errno.h>
 
 #define PORT            8234
 #define BUFFER_SIZE     1024
-#define WAIT_MAX        3
+#define WAIT_MAX        10
 
 int main(){
-    int serverfd, connfd;
-    struct sockaddr_in address;
+    int serverfd = -1, connfd = -1;
+    struct sockaddr_in address = {0};
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
-    int ret;
+    int ret = 0;
 
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
-    if (serverfd == 0) {
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+    if (serverfd < 0) {
+        printf("Failed to create socket.\n");
+        goto fail;
     }
 
     // Configure address and port
@@ -32,26 +33,23 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr*)&address, sizeof(address));
     if(ret < 0){
-        perror("Bind failed");
-        close(serverfd);
-        exit(EXIT_FAILURE);
+        printf("Bind failed");
+        goto fail;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        perror("Listen failed");
-        close(serverfd);
-        exit(EXIT_FAILURE);
+        printf("Listen failed\n");
+        goto fail;
     }
     printf("Server listening on port %d\n", PORT);
 
     // Accept a client connection
     connfd = accept(serverfd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
     if(connfd < 0){
-        perror("Accept failed");
-        close(serverfd);
-        exit(EXIT_FAILURE);
+        printf("Accept failed\n");
+        goto fail;
     }
     printf("Client connected\n");
 
@@ -63,7 +61,7 @@ int main(){
             break;
         }else if(ret < 0){
             //ret < 0 indicating a connection problem
-            perror("bad connection");
+            printf("bad connection: %d\n", errno);
             break;
         }
         // otherwise, ret represents the length of the data actually read
@@ -83,4 +81,13 @@ int main(){
     close(connfd);
     close(serverfd);
     return 0;
+
+fail:
+    if(connfd >= 0){
+        close(connfd);
+    }
+    if(serverfd >= 0){
+        close(connfd);
+    }
+    return -1;
 }
