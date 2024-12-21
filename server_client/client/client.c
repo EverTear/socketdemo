@@ -5,7 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <errno.h>
 
 #define SERVER_IP       "127.0.0.1" // Server IP address
 #define SERVER_PORT     8234      // Server port
@@ -21,7 +20,7 @@ int main(){
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if (connfd < 0) {
-        printf("Socket creation failed\n");
+        perror("Socket creation failed");
         goto fail;
     }
 
@@ -39,7 +38,7 @@ int main(){
     // Connect to the server
     ret = connect(connfd, (struct sockaddr*)&server_address, sizeof(server_address));
     if(ret < 0){
-        printf("Connection to server failed\n");
+        perror("Connection to server failed\n");
         goto fail;
     }
     printf("Connected to the server\n");
@@ -47,7 +46,7 @@ int main(){
     // Send data to the server
     ret = send(connfd, message, sizeof(message), 0);
     if(ret != sizeof(message)){
-        printf("send error\n");
+        perror("send error\n");
         goto fail;
     }
     printf("Message sent to server\n");
@@ -61,7 +60,7 @@ int main(){
             break;
         }else if(ret < 0){
             //ret < 0 indicating a connection problem
-            printf("bad connection: %d\n", errno);
+            perror("bad connection\n");
             break;
         }
         // otherwise, ret represents the length of the data actually read

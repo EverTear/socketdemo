@@ -5,7 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <errno.h>
 
 #define PORT            8234
 #define BUFFER_SIZE     1024
@@ -21,7 +20,7 @@ int main(){
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if (serverfd < 0) {
-        printf("Failed to create socket.\n");
+        perror("Failed to create socket.\n");
         goto fail;
     }
 
@@ -33,14 +32,14 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr*)&address, sizeof(address));
     if(ret < 0){
-        printf("Bind failed");
+        perror("Bind failed");
         goto fail;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        printf("Listen failed\n");
+        perror("Listen failed");
         goto fail;
     }
     printf("Server listening on port %d\n", PORT);
@@ -48,7 +47,7 @@ int main(){
     // Accept a client connection
     connfd = accept(serverfd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
     if(connfd < 0){
-        printf("Accept failed\n");
+        perror("Accept failed");
         goto fail;
     }
     printf("Client connected\n");
@@ -61,7 +60,7 @@ int main(){
             break;
         }else if(ret < 0){
             //ret < 0 indicating a connection problem
-            printf("bad connection: %d\n", errno);
+            perror("bad connection\n");
             break;
         }
         // otherwise, ret represents the length of the data actually read
