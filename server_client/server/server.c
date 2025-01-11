@@ -16,11 +16,12 @@ int main(){
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
     int ret = 0;
+    int send_ret = 0;
 
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if (serverfd < 0) {
-        perror("Failed to create socket.\n");
+        perror("Failed to create socket: ");
         goto fail;
     }
 
@@ -32,14 +33,14 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr*)&address, sizeof(address));
     if(ret < 0){
-        perror("Bind failed");
+        perror("Bind failed: ");
         goto fail;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        perror("Listen failed");
+        perror("Listen failed: ");
         goto fail;
     }
     printf("Server listening on port %d\n", PORT);
@@ -47,7 +48,7 @@ int main(){
     // Accept a client connection
     connfd = accept(serverfd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
     if(connfd < 0){
-        perror("Accept failed");
+        perror("Accept failed: ");
         goto fail;
     }
     printf("Client %d connected\n", connfd);
@@ -60,13 +61,19 @@ int main(){
             break;
         }else if(ret < 0){
             //ret < 0 indicating a connection problem
-            perror("bad connection\n");
+            perror("Bad connection: ");
             break;
         }
+
         // otherwise, ret represents the length of the data actually read
         log_data(stdout, buffer, ret);
+
         // just send what we recevie
-        send(connfd, buffer, ret, 0);
+        send_ret = send(connfd, buffer, ret, 0);
+        if(send_ret != ret){
+            perror("send error: ");
+            goto fail;
+        }
 
         if(ret == BUFFER_SIZE){
             // there is still data that has not been read

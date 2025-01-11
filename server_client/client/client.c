@@ -20,7 +20,7 @@ int main(){
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if (connfd < 0) {
-        perror("Socket creation failed");
+        perror("Socket creation failed: ");
         goto fail;
     }
 
@@ -38,7 +38,7 @@ int main(){
     // Connect to the server
     ret = connect(connfd, (struct sockaddr*)&server_address, sizeof(server_address));
     if(ret < 0){
-        perror("Connection to server failed\n");
+        perror("Connection to server failed: ");
         goto fail;
     }
     printf("Connected to the server\n");
@@ -46,7 +46,7 @@ int main(){
     // Send data to the server
     ret = send(connfd, message, sizeof(message), 0);
     if(ret != sizeof(message)){
-        perror("send error\n");
+        perror("send error: ");
         goto fail;
     }
     printf("Message sent to server\n");
@@ -60,7 +60,7 @@ int main(){
             break;
         }else if(ret < 0){
             //ret < 0 indicating a connection problem
-            perror("bad connection\n");
+            perror("bad connection: ");
             break;
         }
         // otherwise, ret represents the length of the data actually read
