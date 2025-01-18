@@ -22,7 +22,7 @@ int main(){
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if (serverfd < 0) {
         perror("Failed to create socket: ");
-        goto fail;
+        goto end;
     }
 
     // Configure address and port
@@ -34,14 +34,14 @@ int main(){
     ret = bind(serverfd, (struct sockaddr*)&address, sizeof(address));
     if(ret < 0){
         perror("Bind failed: ");
-        goto fail;
+        goto end;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
         perror("Listen failed: ");
-        goto fail;
+        goto end;
     }
     printf("Server listening on port %d\n", PORT);
 
@@ -49,7 +49,7 @@ int main(){
     connfd = accept(serverfd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
     if(connfd < 0){
         perror("Accept failed: ");
-        goto fail;
+        goto end;
     }
     printf("Client %d connected\n", connfd);
 
@@ -72,7 +72,7 @@ int main(){
         send_ret = send(connfd, buffer, ret, 0);
         if(send_ret != ret){
             perror("send error: ");
-            goto fail;
+            goto end;
         }
 
         if(ret == BUFFER_SIZE){
@@ -83,12 +83,8 @@ int main(){
         break;
     }
 
+end:
     // Close the sockets
-    close(connfd);
-    close(serverfd);
-    return 0;
-
-fail:
     if(connfd >= 0){
         close(connfd);
     }

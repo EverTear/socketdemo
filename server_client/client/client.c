@@ -21,7 +21,7 @@ int main(){
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if (connfd < 0) {
         perror("Socket creation failed: ");
-        goto fail;
+        goto end;
     }
 
     // Configure server address
@@ -32,14 +32,14 @@ int main(){
     ret = inet_pton(AF_INET, SERVER_IP, &server_address.sin_addr);
     if(ret <= 0){
         printf("Invalid address / Address not supported.\n");
-        goto fail;
+        goto end;
     }
 
     // Connect to the server
     ret = connect(connfd, (struct sockaddr*)&server_address, sizeof(server_address));
     if(ret < 0){
         perror("Connection to server failed: ");
-        goto fail;
+        goto end;
     }
     printf("Connected to the server\n");
 
@@ -47,7 +47,7 @@ int main(){
     ret = send(connfd, message, sizeof(message), 0);
     if(ret != sizeof(message)){
         perror("send error: ");
-        goto fail;
+        goto end;
     }
     printf("Message sent to server\n");
 
@@ -74,16 +74,12 @@ int main(){
         // all data has been read
         break;
     }
-
+    
+end:
     // Close the socket
-    close(connfd);
-    printf("Connection closed\n");
-
-    return 0;
-
-fail:
     if(connfd >= 0){
         close(connfd);
+        printf("Connection closed\n");
     }
-    return -1;
+    return 0;
 }

@@ -1,5 +1,4 @@
-#include "common.h"
-
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,10 +12,13 @@
 
 static int serverfd = -1;
 
-void signal_handler(int signo){
-    printf("Signal captured, closing socket...\n");
-    if(serverfd >= 0){
-        close(serverfd);
+void handle_signal(int signo){
+    if(signo == SIGINT || signo == SIGTERM){
+        printf("Signal %d captured, closing socket...\n", signo);
+        if(serverfd >= 0){
+            close(serverfd);
+        }
+        exit(0);
     }
 }
 
@@ -26,15 +28,16 @@ int main(){
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
     int ret = 0;
+    size_t i = 0;
     
     // Register the signal process function
-    signal(SIGINT, signal_handler);
+    signal(SIGINT, handle_signal);
 
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if(serverfd < 0){
-        perror("Socket creation failed");
-        goto fail;
+        perror("Socket creation failed: ");
+        goto end;
     }
 
     // Configure address and port
@@ -45,15 +48,15 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
     if(ret < 0){
-        perror("Bind failed");
-        goto fail;
+        perror("Bind failed: ");
+        goto end;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        perror("Listen failed");
-        goto fail;
+        perror("Listen failed: ");
+        goto end;
     }
     printf("Server listening on port %d\n", PORT);
 
@@ -62,7 +65,7 @@ int main(){
         connfd = accept(serverfd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (connfd < 0){
             perror("Accept failed");
-            goto fail;
+            goto end;
         }
         printf("Client %d connected\n", connfd);
 
@@ -74,29 +77,34 @@ int main(){
                 break;
             }else if(ret < 0){
                 //ret < 0 indicating a connection problem
-                perror("bad connection");
+                perror("bad connection: ");
                 break;
             }
             // otherwise, ret represents the length of the data actually read
-            log_data(stdout, buffer, ret);
-            // just send what we recevie
-            send(connfd, buffer, ret, 0);
+            for(i = 0; i < ret; ++i){
+        		printf("0x%02X ", buffer[i]);
+        		if((i+1)%16 == 0){
+            		printf("\n");
+        		}
+    		}
+    		if((i+1)%16){
+        		printf("\n");
+    		}
 
-            continue;
+            // just send what we receive
+            send(connfd, buffer, ret, 0);
         }
         // Close the connection
         close(connfd);
         printf("connection %d closed\n", connfd);
     }
 
-    return 0;
-
-fail:
+end:
     if(connfd >= 0){
         close(connfd);
     }
     if(serverfd >= 0){
         close(serverfd);
     }
-    return -1;
+    return 0;
 }
