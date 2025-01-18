@@ -16,7 +16,7 @@ int main(){
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
     int ret = 0;
-    int send_ret = 0;
+    ssize_t recv_ret = 0, send_ret = 0;
 
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -54,33 +54,25 @@ int main(){
     printf("Client %d connected\n", connfd);
 
     // Handle client request
-    while(1){
-        ret = recv(connfd, buffer, BUFFER_SIZE, 0);
-        if(ret == 0){
-            //ret == 0 means the client has closed the connection
-            break;
-        }else if(ret < 0){
-            //ret < 0 indicating a connection problem
-            perror("Bad connection: ");
-            break;
-        }
+    
+    recv_ret = recv(connfd, buffer, BUFFER_SIZE, 0);
+    if(recv_ret == 0){
+        //recv_ret == 0 means the client has closed the connection
+        goto end;
+    }else if(recv_ret < 0){
+        //recv_ret < 0 indicating a connection problem
+        perror("Bad connection: ");
+        goto end;
+    }
 
-        // otherwise, ret represents the length of the data actually read
-        log_data(stdout, buffer, ret);
+    // otherwise, recv_ret represents the length of the data actually read
+    log_data(stdout, buffer, recv_ret);
 
-        // just send what we recevie
-        send_ret = send(connfd, buffer, ret, 0);
-        if(send_ret != ret){
-            perror("send error: ");
-            goto end;
-        }
-
-        if(ret == BUFFER_SIZE){
-            // there is still data that has not been read
-            continue;
-        }
-        // all data has been read
-        break;
+    // just send what we recevie
+    send_ret = send(connfd, buffer, recv_ret, 0);
+    if(send_ret != recv_ret){
+        printf("send error\n");
+        goto end;
     }
 
 end:

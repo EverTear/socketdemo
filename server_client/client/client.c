@@ -14,8 +14,9 @@ int main(){
     int connfd = -1;
     struct sockaddr_in server_address = {0};
     unsigned char buffer[BUFFER_SIZE] = {0};
-    unsigned char message[] = {0x01, 0x02, 0x03, 0x04, 0x05};
+    unsigned char message[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     int ret = 0;
+    ssize_t sr_ret = 0;
 
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -44,36 +45,27 @@ int main(){
     printf("Connected to the server\n");
 
     // Send data to the server
-    ret = send(connfd, message, sizeof(message), 0);
-    if(ret != sizeof(message)){
-        perror("send error: ");
+    sr_ret = send(connfd, message, sizeof(message), 0);
+    if(sr_ret != sizeof(message)){
+        printf("send error\n");
         goto end;
     }
     printf("Message sent to server\n");
 
     // Receive response from the server
     printf("Response from server:\n");
-    while(1){
-        ret = recv(connfd, buffer, BUFFER_SIZE, 0);
-        if(ret == 0){
-            //ret == 0 means the client has closed the connection
-            break;
-        }else if(ret < 0){
-            //ret < 0 indicating a connection problem
-            perror("bad connection: ");
-            break;
-        }
-        // otherwise, ret represents the length of the data actually read
-        
-        log_data(stdout, buffer, ret);
-
-        if(ret == BUFFER_SIZE){
-            // there is still data that has not been read
-            continue;
-        }
-        // all data has been read
-        break;
+    
+    sr_ret = recv(connfd, buffer, BUFFER_SIZE, 0);
+    if(sr_ret == 0){
+        //sr_ret == 0 means the server has closed the connection
+        goto end;
+    }else if(sr_ret < 0){
+        //sr_ret < 0 indicating a connection problem
+        perror("bad connection: ");
+        goto end;
     }
+    // otherwise, sr_ret represents the length of the data actually read
+    log_data(stdout, buffer, sr_ret);
     
 end:
     // Close the socket
