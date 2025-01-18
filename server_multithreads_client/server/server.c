@@ -59,7 +59,7 @@ void* handle_conn(void* arg){
         
         send_len = send(para->connfd, buffer, ret, 0);
         if(send_len != ret){
-            perror("send error");
+            perror("send error: ");
             goto end;
         }
 
@@ -94,7 +94,7 @@ int main(){
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if(serverfd < 0){
-        perror("Socket creation failed");
+        perror("Socket creation failed: ");
         goto end;
     }
 
@@ -106,14 +106,14 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
     if(ret < 0){
-        perror("Bind failed");
+        perror("Bind failed: ");
         goto end;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        perror("Listen failed");
+        perror("Listen failed: ");
         goto end;
     }
     printf("Server listening on port %d\n", PORT);
@@ -121,7 +121,7 @@ int main(){
     while(1){
         connfd = accept(serverfd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (connfd < 0){
-            perror("Accept failed");
+            perror("Accept failed: ");
             goto end;
         }
         printf("Client %d connected\n", connfd);
