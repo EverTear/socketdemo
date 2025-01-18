@@ -30,7 +30,7 @@ int main(){
     int addrlen = sizeof(address);
     unsigned char buffer[BUFFER_SIZE] = {0};
     int ret = 0;
-    size_t i = 0;
+    ssize_t recv_ret = 0, send_ret = 0;
     
     // Register the signal process function
     signal(SIGINT, handle_signal);
@@ -71,27 +71,34 @@ int main(){
         }
         printf("Client %d connected\n", connfd);
 
-        // Handle client request
         while(1){
-            ret = recv(connfd, buffer, BUFFER_SIZE, 0);
-            if(ret == 0){
-                //ret == 0 means the client has closed the connection
+            // Handle client request
+            recv_ret = recv(connfd, buffer, BUFFER_SIZE, 0);
+            if(recv_ret == 0){
+                //recv_ret == 0 means the client has closed the connection
+                // Close the connection
+                close(connfd);
+                printf("connection %d closed\n", connfd);
                 break;
-            }else if(ret < 0){
-                //ret < 0 indicating a connection problem
+            }else if(recv_ret < 0){
+                //recv_ret < 0 indicating a connection problem
                 perror("bad connection: ");
+                // Close the connection
+                close(connfd);
+                printf("connection %d closed\n", connfd);
                 break;
             }
-            // otherwise, ret represents the length of the data actually read
+            // otherwise, recv_ret represents the length of the data actually read
             
-            log_data(stdout, buffer, ret);
+            log_data(stdout, buffer, recv_ret);
 
             // just send what we receive
-            send(connfd, buffer, ret, 0);
+            send_ret = send(connfd, buffer, recv_ret, 0);
+            if(send_ret != recv_ret){
+                printf("send error\n");
+                goto end;
+            }
         }
-        // Close the connection
-        close(connfd);
-        printf("connection %d closed\n", connfd);
     }
 
 end:
