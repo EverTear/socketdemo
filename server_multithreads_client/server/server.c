@@ -30,36 +30,35 @@ void signal_handler(int signo){
 
 void* handle_conn(void* arg){
     handle_conn_arg_t* para = (handle_conn_arg_t*)arg;
-    int ret = 0;
     unsigned char* buffer = NULL;
-    unsigned int send_len = 0;
+    ssize_t recv_ret = 0, send_ret = 0;
 
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(buffer == NULL){
-        perror("calloc");
+        perror("calloc error: ");
         goto end;
     }
     
     // Handle client request
     while(1){
-        ret = recv(para->connfd, buffer, BUFFER_SIZE, 0);
-        if(ret == 0){
-            //ret == 0 means the client has closed the connection
+        recv_ret = recv(para->connfd, buffer, BUFFER_SIZE, 0);
+        if(recv_ret == 0){
+            //recv_ret == 0 means the client has closed the connection
             printf("connection %d closed\n", para->connfd);
             close(para->connfd);
             break;
-        }else if(ret < 0){
-            //ret < 0 indicating a connection problem
+        }else if(recv_ret < 0){
+            //recv_ret < 0 indicating a connection problem
             printf("Bad connection %d: %d\n", para->connfd, errno);
             goto end;
         }
-        // otherwise, ret represents the length of the data actually read
-        // log_data(stdout, buffer, ret);
+        // otherwise, recv_ret represents the length of the data actually read
+        // log_data(stdout, buffer, recv_ret);
         // just send what we recevie
         
-        send_len = send(para->connfd, buffer, ret, 0);
-        if(send_len != ret){
-            perror("send error: ");
+        send_ret = send(para->connfd, buffer, recv_ret, 0);
+        if(send_ret != recv_ret){
+            printf("send error\n");
             goto end;
         }
 
@@ -128,7 +127,7 @@ int main(){
 
         thread_arg = (handle_conn_arg_t*)calloc(sizeof(handle_conn_arg_t), 1);
         if(NULL == thread_arg){
-            printf("calloc error\n");
+            perror("calloc error: ");
             goto end;
         }
         thread_arg->connfd = connfd;

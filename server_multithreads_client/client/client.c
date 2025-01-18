@@ -48,7 +48,7 @@ void* communicate(void* arg){
         // Send data to the server
         ret = send(connfd, message, sizeof(message), 0);
         if(ret != sizeof(message)){
-            perror("send error: ");
+            printf("send error\n");
             goto end;
         }
 
