@@ -20,58 +20,70 @@ void* communicate(void* arg){
     int connfd = -1;
     unsigned char* buffer = NULL;
     int ret = 0;
-    ssize_t sr_ret = 0;
     size_t i = 0;
 
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(NULL == buffer){
         printf("calloc error\n");
-        goto end;
+        goto fail;
     }
 
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if(connfd < 0){
         perror("Socket creation failed: ");
-        goto end;
+        goto fail;
     }
 
     // Connect to the server
     ret = connect(connfd, (struct sockaddr *)&server_address, sizeof(server_address));
     if(ret < 0){
         perror("Connection to server failed: ");
-        goto end;
+        goto fail;
     }
     printf("Created connection: %d\n", connfd);
     printf("Connection %d sending\n", connfd);
 
     for(i = 0; i < 10; ++i){
         // Send data to the server
-        sr_ret = send(connfd, message, sizeof(message), 0);
-        if(sr_ret != sizeof(message)){
-            printf("send error\n");
-            goto end;
+        ret = send(connfd, message, sizeof(message), 0);
+        if(ret != sizeof(message)){
+            perror("send error: ");
+            goto fail;
         }
 
         // Receive response from the server
-        
-        sr_ret = recv(connfd, buffer, BUFFER_SIZE, 0);
-        if(sr_ret == 0){
-            //sr_ret == 0 means the client has closed the connection
-            break;
-        }else if(sr_ret < 0){
-            //sr_ret < 0 indicating a connection problem
-            printf("Bad connection %d: %d\n", connfd, errno);
-            goto end;
-        }
-        // otherwise, sr_ret represents the length of the data actually read
-        // log_data(stdout, buffer, sr_ret);
+        while(1){
+            ret = recv(connfd, buffer, BUFFER_SIZE, 0);
+            if(ret == 0){
+                //ret == 0 means the client has closed the connection
+                break;
+            }else if(ret < 0){
+                //ret < 0 indicating a connection problem
+                printf("Bad connection %d: %d\n", connfd, errno);
+                goto fail;
+            }
+            // otherwise, ret represents the length of the data actually read
 
+            // log_data(stdout, buffer, ret);
+
+            if(ret == BUFFER_SIZE){
+                // there is still data that has not been read
+                continue;
+            }
+            // all data has been read
+            break;
+        }
         sleep(1);
     }
 
-end:
     // Close the socket
+    close(connfd);
+    printf("Connection %d closed\n", connfd);
+    free(buffer);
+    pthread_exit(NULL);
+
+fail:
     if(connfd >= 0){
         close(connfd);
         printf("Connection %d closed\n", connfd);
