@@ -20,26 +20,26 @@ void* communicate(void* arg){
     int connfd = -1;
     unsigned char* buffer = NULL;
     int ret = 0;
-    unsigned int i = 0;
+    size_t i = 0;
 
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(NULL == buffer){
         printf("calloc error\n");
-        goto fail;
+        goto end;
     }
 
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if(connfd < 0){
         perror("Socket creation failed");
-        goto fail;
+        goto end;
     }
 
     // Connect to the server
     ret = connect(connfd, (struct sockaddr *)&server_address, sizeof(server_address));
     if(ret < 0){
         perror("Connection to server failed");
-        goto fail;
+        goto end;
     }
     printf("Created connection: %d\n", connfd);
     printf("Connection %d sending\n", connfd);
@@ -49,7 +49,7 @@ void* communicate(void* arg){
         ret = send(connfd, message, sizeof(message), 0);
         if(ret != sizeof(message)){
             perror("send error");
-            goto fail;
+            goto end;
         }
 
         // Receive response from the server
@@ -61,7 +61,7 @@ void* communicate(void* arg){
             }else if(ret < 0){
                 //ret < 0 indicating a connection problem
                 printf("Bad connection %d: %d\n", connfd, errno);
-                goto fail;
+                goto end;
             }
             // otherwise, ret represents the length of the data actually read
 
@@ -77,13 +77,8 @@ void* communicate(void* arg){
         sleep(1);
     }
 
+end:
     // Close the socket
-    close(connfd);
-    printf("Connection %d closed\n", connfd);
-    free(buffer);
-    pthread_exit(NULL);
-
-fail:
     if(connfd >= 0){
         close(connfd);
         printf("Connection %d closed\n", connfd);
@@ -97,7 +92,7 @@ fail:
 int main() {
     int ret = 0;
     pthread_t threads[CONN_NUM] = {0};
-    unsigned int i = 0;
+    size_t i = 0;
 
     // Configure server address
     server_address.sin_family = AF_INET;

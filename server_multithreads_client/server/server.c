@@ -19,9 +19,12 @@ typedef struct handle_conn_arg_st{
 static int serverfd = -1;
 
 void signal_handler(int signo){
-    printf("Signal captured, closing socket...\n");
-    if(serverfd >= 0){
-        close(serverfd);
+    if(signo == SIGINT || signo == SIGTERM){
+        printf("Signal %d captured, closing socket...\n", signo);
+        if(serverfd >= 0){
+            close(serverfd);
+        }
+        exit(0);
     }
 }
 
@@ -34,7 +37,7 @@ void* handle_conn(void* arg){
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(buffer == NULL){
         perror("calloc");
-        goto fail;
+        goto end;
     }
     
     // Handle client request
@@ -47,9 +50,8 @@ void* handle_conn(void* arg){
             break;
         }else if(ret < 0){
             //ret < 0 indicating a connection problem
-            // perror("bad connection");
             printf("Bad connection %d: %d\n", para->connfd, errno);
-            goto fail;
+            goto end;
         }
         // otherwise, ret represents the length of the data actually read
         // log_data(stdout, buffer, ret);
@@ -58,17 +60,13 @@ void* handle_conn(void* arg){
         send_len = send(para->connfd, buffer, ret, 0);
         if(send_len != ret){
             perror("send error");
-            goto fail;
+            goto end;
         }
 
         continue;
     }
 
-    free(buffer);
-    free(arg);
-    pthread_exit(NULL);
-
-fail:
+end:
     if(para->connfd >= 0){
         close(para->connfd);
     }
@@ -97,7 +95,7 @@ int main(){
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if(serverfd < 0){
         perror("Socket creation failed");
-        goto fail;
+        goto end;
     }
 
     // Configure address and port
@@ -109,14 +107,14 @@ int main(){
     ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
     if(ret < 0){
         perror("Bind failed");
-        goto fail;
+        goto end;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
         perror("Listen failed");
-        goto fail;
+        goto end;
     }
     printf("Server listening on port %d\n", PORT);
 
@@ -124,26 +122,24 @@ int main(){
         connfd = accept(serverfd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (connfd < 0){
             perror("Accept failed");
-            goto fail;
+            goto end;
         }
         printf("Client %d connected\n", connfd);
 
         thread_arg = (handle_conn_arg_t*)calloc(sizeof(handle_conn_arg_t), 1);
         if(NULL == thread_arg){
             printf("calloc error\n");
-            goto fail;
+            goto end;
         }
         thread_arg->connfd = connfd;
         pthread_create(&thread, NULL, handle_conn, (void*)thread_arg);
         pthread_detach(thread);
     }
 
-    return 0;
-
-fail:
+end:
     if(serverfd >= 0){
         close(serverfd);
     }
 
-    return -1;
+    return 0;
 }

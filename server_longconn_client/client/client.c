@@ -1,3 +1,5 @@
+#include "common.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,15 +67,7 @@ int main() {
             }
             // otherwise, ret represents the length of the data actually read
 
-            for(j = 0; j < ret; ++j){
-        		printf("0x%02X ", buffer[j]);
-        		if((j+1)%16 == 0){
-            		printf("\n");
-        		}
-    		}
-    		if((j+1)%16){
-        		printf("\n");
-    		}
+            log_data(stdout, buffer, ret);
 
             if(ret == BUFFER_SIZE){
                 // there is still data that has not been read

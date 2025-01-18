@@ -1,3 +1,5 @@
+#include "common.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,15 +83,8 @@ int main(){
                 break;
             }
             // otherwise, ret represents the length of the data actually read
-            for(i = 0; i < ret; ++i){
-        		printf("0x%02X ", buffer[i]);
-        		if((i+1)%16 == 0){
-            		printf("\n");
-        		}
-    		}
-    		if((i+1)%16){
-        		printf("\n");
-    		}
+            
+            log_data(stdout, buffer, ret);
 
             // just send what we receive
             send(connfd, buffer, ret, 0);
