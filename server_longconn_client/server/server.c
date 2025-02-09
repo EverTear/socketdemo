@@ -38,7 +38,7 @@ int main(){
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if(serverfd < 0){
-        perror("Socket creation failed: ");
+        perror("Socket creation failed");
         goto end;
     }
 
@@ -50,14 +50,14 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
     if(ret < 0){
-        perror("Bind failed: ");
+        perror("Bind failed");
         goto end;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        perror("Listen failed: ");
+        perror("Listen failed");
         goto end;
     }
     printf("Server listening on port %d\n", PORT);
@@ -82,7 +82,7 @@ int main(){
                 break;
             }else if(recv_ret < 0){
                 //recv_ret < 0 indicating a connection problem
-                perror("bad connection: ");
+                perror("bad connection");
                 // Close the connection
                 close(connfd);
                 printf("connection %d closed\n", connfd);

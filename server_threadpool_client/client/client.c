@@ -24,21 +24,21 @@ void* communicate(void* arg){
 
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(NULL == buffer){
-        printf("calloc error\n");
+        perror("calloc error");
         goto fail;
     }
 
     // Create socket
     connfd = socket(PF_INET, SOCK_STREAM, 0);
     if(connfd < 0){
-        perror("Socket creation failed: ");
+        perror("Socket creation failed");
         goto fail;
     }
 
     // Connect to the server
     ret = connect(connfd, (struct sockaddr *)&server_address, sizeof(server_address));
     if(ret < 0){
-        perror("Connection to server failed: ");
+        perror("Connection to server failed");
         goto fail;
     }
     printf("Created connection: %d\n", connfd);
@@ -48,7 +48,7 @@ void* communicate(void* arg){
         // Send data to the server
         ret = send(connfd, message, sizeof(message), 0);
         if(ret != sizeof(message)){
-            perror("send error: ");
+            perror("send error");
             goto fail;
         }
 

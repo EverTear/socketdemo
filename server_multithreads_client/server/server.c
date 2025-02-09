@@ -35,7 +35,7 @@ void* handle_conn(void* arg){
 
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(buffer == NULL){
-        perror("calloc error: ");
+        perror("calloc error");
         goto end;
     }
     
@@ -93,7 +93,7 @@ int main(){
     // Create socket file descriptor
     serverfd = socket(PF_INET, SOCK_STREAM, 0);
     if(serverfd < 0){
-        perror("Socket creation failed: ");
+        perror("Socket creation failed");
         goto end;
     }
 
@@ -105,14 +105,14 @@ int main(){
     // Bind the socket to the address and port
     ret = bind(serverfd, (struct sockaddr *)&address, sizeof(address));
     if(ret < 0){
-        perror("Bind failed: ");
+        perror("Bind failed");
         goto end;
     }
 
     // Start listening for incoming connections
     ret = listen(serverfd, WAIT_MAX);
     if(ret < 0){
-        perror("Listen failed: ");
+        perror("Listen failed");
         goto end;
     }
     printf("Server listening on port %d\n", PORT);
@@ -120,14 +120,14 @@ int main(){
     while(1){
         connfd = accept(serverfd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (connfd < 0){
-            perror("Accept failed: ");
+            perror("Accept failed");
             goto end;
         }
         printf("Client %d connected\n", connfd);
 
         thread_arg = (handle_conn_arg_t*)calloc(sizeof(handle_conn_arg_t), 1);
         if(NULL == thread_arg){
-            perror("calloc error: ");
+            perror("calloc error");
             goto end;
         }
         thread_arg->connfd = connfd;
