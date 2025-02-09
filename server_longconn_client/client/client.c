@@ -7,8 +7,9 @@
 #include <arpa/inet.h>
 
 #define SERVER_IP       "127.0.0.1" // Server IP address
-#define SERVER_PORT     8234      // Server port
-#define BUFFER_SIZE     1024      // Buffer size for communication
+#define SERVER_PORT     8234        // Server port
+#define BUFFER_SIZE     1024        // Buffer size for communication
+#define SEND_LOOP       5           // Send data loop count
 
 int main() {
     int connfd = -1;
@@ -45,7 +46,7 @@ int main() {
     }
     printf("Connected to the server\n");
 
-    for(i = 0; i < 5; ++i){
+    for(i = 0; i < SEND_LOOP; ++i){
         // Send data to the server
         sr_ret = send(connfd, message, sizeof(message), 0);
         if(sr_ret != sizeof(message)){

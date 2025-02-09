@@ -9,9 +9,10 @@
 #include <errno.h>
 
 #define SERVER_IP       "127.0.0.1" // Server IP address
-#define SERVER_PORT     8234      // Server port
-#define BUFFER_SIZE     1024      // Buffer size for communication
+#define SERVER_PORT     8234        // Server port
+#define BUFFER_SIZE     1024        // Buffer size for communication
 #define CONN_NUM        32          // Number of connections
+#define SEND_LOOP       10          // Send data loop count
 
 static unsigned char message[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 static struct sockaddr_in server_address = {0};
@@ -45,7 +46,7 @@ void* communicate(void* arg){
     printf("Created connection: %d\n", connfd);
     printf("Connection %d sending\n", connfd);
 
-    for(i = 0; i < 10; ++i){
+    for(i = 0; i < SEND_LOOP; ++i){
         // Send data to the server
         sr_ret = send(connfd, message, sizeof(message), 0);
         if(sr_ret != sizeof(message)){
