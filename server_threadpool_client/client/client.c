@@ -9,9 +9,11 @@
 #include <errno.h>
 
 #define SERVER_IP       "127.0.0.1" // Server IP address
-#define SERVER_PORT     8234      // Server port
-#define BUFFER_SIZE     1024      // Buffer size for communication
-#define CONN_NUM        32          // Number of connections
+#define SERVER_PORT     8234        // Server port
+#define BUFFER_SIZE     1024        // Buffer size for communication
+#define THREAD_NUM      32          // Number of threads
+#define SEND_LOOP       10          // Send data loop count
+#define LOOP_COUNT      200         // Loop count
 
 static unsigned char message[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 static struct sockaddr_in server_address = {0};
@@ -20,73 +22,68 @@ void* communicate(void* arg){
     int connfd = -1;
     unsigned char* buffer = NULL;
     int ret = 0;
-    size_t i = 0;
+    size_t i = 0, j = 0;
+
+    printf("thread %lu sending\n", (unsigned long)pthread_self());
 
     buffer = (unsigned char*)calloc(BUFFER_SIZE, 1);
     if(NULL == buffer){
         perror("calloc error");
-        goto fail;
+        goto end;
     }
 
-    // Create socket
-    connfd = socket(PF_INET, SOCK_STREAM, 0);
-    if(connfd < 0){
-        perror("Socket creation failed");
-        goto fail;
-    }
-
-    // Connect to the server
-    ret = connect(connfd, (struct sockaddr *)&server_address, sizeof(server_address));
-    if(ret < 0){
-        perror("Connection to server failed");
-        goto fail;
-    }
-    printf("Created connection: %d\n", connfd);
-    printf("Connection %d sending\n", connfd);
-
-    for(i = 0; i < 10; ++i){
-        // Send data to the server
-        ret = send(connfd, message, sizeof(message), 0);
-        if(ret != sizeof(message)){
-            perror("send error");
-            goto fail;
+    for(i = 0; i < LOOP_COUNT; ++i){
+        // Create socket
+        connfd = socket(PF_INET, SOCK_STREAM, 0);
+        if(connfd < 0){
+            perror("Socket creation failed");
+            goto end;
         }
 
-        // Receive response from the server
-        while(1){
-            ret = recv(connfd, buffer, BUFFER_SIZE, 0);
-            if(ret == 0){
-                //ret == 0 means the client has closed the connection
+        // Connect to the server
+        ret = connect(connfd, (struct sockaddr *)&server_address, sizeof(server_address));
+        if(ret < 0){
+            perror("Connection to server failed");
+            goto end;
+        }
+
+        for(j = 0; j < SEND_LOOP; ++j){
+            // Send data to the server
+            ret = send(connfd, message, sizeof(message), 0);
+            if(ret != sizeof(message)){
+                perror("send error");
+                goto end;
+            }
+
+            // Receive response from the server
+            while(1){
+                ret = recv(connfd, buffer, BUFFER_SIZE, 0);
+                if(ret == 0){
+                    //ret == 0 means the client has closed the connection
+                    break;
+                }else if(ret < 0){
+                    //ret < 0 indicating a connection problem
+                    printf("Bad connection %d: %d\n", connfd, errno);
+                    goto end;
+                }
+                // otherwise, ret represents the length of the data actually read
+
+                // log_data(stdout, buffer, ret);
+
+                if(ret == BUFFER_SIZE){
+                    // there is still data that has not been read
+                    continue;
+                }
+                // all data has been read
                 break;
-            }else if(ret < 0){
-                //ret < 0 indicating a connection problem
-                printf("Bad connection %d: %d\n", connfd, errno);
-                goto fail;
             }
-            // otherwise, ret represents the length of the data actually read
-
-            // log_data(stdout, buffer, ret);
-
-            if(ret == BUFFER_SIZE){
-                // there is still data that has not been read
-                continue;
-            }
-            // all data has been read
-            break;
         }
-        sleep(1);
+        close(connfd);
     }
 
-    // Close the socket
-    close(connfd);
-    printf("Connection %d closed\n", connfd);
-    free(buffer);
-    pthread_exit(NULL);
-
-fail:
+end:
     if(connfd >= 0){
         close(connfd);
-        printf("Connection %d closed\n", connfd);
     }
     if(buffer != NULL){
         free(buffer);
@@ -96,8 +93,9 @@ fail:
 
 int main() {
     int ret = 0;
-    pthread_t threads[CONN_NUM] = {0};
+    pthread_t threads[THREAD_NUM] = {0};
     size_t i = 0;
+    unsigned long long start_time = 0, end_time = 0;
 
     // Configure server address
     server_address.sin_family = AF_INET;
@@ -110,14 +108,20 @@ int main() {
         return -1;
     }
 
-    for(i = 0; i < CONN_NUM; ++i){
+    start_time = get_current_time_ms();
+
+    for(i = 0; i < THREAD_NUM; ++i){
         pthread_create(&threads[i], NULL, communicate, NULL);
         // sleep(1);
     }
 
-    for(i = 0; i < CONN_NUM; ++i){
+    for(i = 0; i < THREAD_NUM; ++i){
         pthread_join(threads[i], NULL);
     }
+
+    end_time = get_current_time_ms();
+
+    printf("Time elapsed: %llu ms\n", end_time - start_time);
 
     return 0;
 }
