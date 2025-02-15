@@ -11,7 +11,7 @@
 #define SERVER_IP       "127.0.0.1" // Server IP address
 #define SERVER_PORT     8234        // Server port
 #define BUFFER_SIZE     1024        // Buffer size for communication
-#define CONN_NUM        32          // Number of connections
+#define THREAD_NUM      32          // Number of threads
 #define SEND_LOOP       10          // Send data loop count
 
 static unsigned char message[] = {0x01, 0x02, 0x03, 0x04, 0x05};
@@ -85,7 +85,7 @@ end:
 
 int main() {
     int ret = 0;
-    pthread_t threads[CONN_NUM] = {0};
+    pthread_t threads[THREAD_NUM] = {0};
     size_t i = 0;
 
     // Configure server address
@@ -99,12 +99,12 @@ int main() {
         return -1;
     }
 
-    for(i = 0; i < CONN_NUM; ++i){
+    for(i = 0; i < THREAD_NUM; ++i){
         pthread_create(&threads[i], NULL, communicate, NULL);
         // sleep(1);
     }
 
-    for(i = 0; i < CONN_NUM; ++i){
+    for(i = 0; i < THREAD_NUM; ++i){
         pthread_join(threads[i], NULL);
     }
 
